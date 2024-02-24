@@ -15,5 +15,11 @@ genai.configure(api_key=GOOGLE_API_KEY)
 
 model = genai.GenerativeModel('gemini-pro')
 
-response = model.generate_content("What is the meaning of life?")
+
+with open('dartfrog_query.txt', 'r') as file:
+  query_text = file.read()
+
+response = model.generate_content(query_text)
 print(response.text)
+
+
