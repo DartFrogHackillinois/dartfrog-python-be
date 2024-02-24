@@ -38,7 +38,8 @@ def on_snapshot(col_snapshot, changes, read_time, user_id):
             try:
                 graphData = {  # working with python dictionary to post to Firestore
                     "graph_response": content, # Use a field name to store the response
-                    "user_id": user_id
+                    "user_id": user_id,
+                    "type": "line"
                 }  # dictionary and json data were mismatched
 
                 dartfrog_data = db.collection("graphData").document("iRoqnCqgAYzgOmbeGdG1").update(graphData)
