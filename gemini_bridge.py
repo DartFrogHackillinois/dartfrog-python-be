@@ -17,12 +17,25 @@ def main_query(userId):
     text = text.replace('•', '  *')
     return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))'''
 
+# Check if the app is already initialized
+if not firebase_admin._apps:
+    # App not yet initialized, proceed with initialization
+    cred = credentials.Certificate('json_creds/dartfrog-ecb02-firebase-adminsdk-tt4ph-fe4cf40a97.json')
+    app = firebase_admin.initialize_app(cred)
+    db = firestore.client()
+else:
+    # App already initialized, retrieve the existing app
+    app = firebase_admin.get_app()
+    db = firestore.client()
 
+<<<<<<< HEAD
+=======
     cred = credentials.Certificate('json_creds/dartfrog-ecb02-firebase-adminsdk-tt4ph-fe4cf40a97.json') # cert from firebase
 
     app = firebase_admin.initialize_app(cred) # init for firebase client
 
     db = firestore.client()
+>>>>>>> d7f24bfb5ae02abb804ffe8365ad14ad425cf772
 
     GOOGLE_API_KEY = ('AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY')
     genai.configure(api_key=GOOGLE_API_KEY)
