@@ -5,25 +5,31 @@ from firebase_admin import credentials, firestore
 import google.generativeai as genai
 import firebase
 import gemini_bridge
+import os
 
-app = Flask(__name__)
+flask_app = Flask(__name__)
 
-# Firebase Initialization
-cred = credentials.Certificate('json_creds/dartfrog-ecb02-firebase-adminsdk-tt4ph-fe4cf40a97.json')
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+# Check if the app is already initialized
+if not firebase_admin._apps:
+    # App not yet initialized, proceed with initialization
+    cred = credentials.Certificate('json_creds/dartfrog-ecb02-firebase-adminsdk-tt4ph-fe4cf40a97.json')
+    firebase_app = firebase_admin.initialize_app(cred)
+    db = firestore.client()
+else:
+    # App already initialized, retrieve the existing app
+    firebase_app = firebase_admin.get_app()
+    db = firestore.client()
 
 # Gemini Bridge Initialization
 GOOGLE_API_KEY = 'AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY'
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-pro')
 
-@app.route('/')
+@flask_app.route('/')
 def index():
     return render_template('index.html')
 
-
-@app.route('/generate', methods=['POST'])
+@flask_app.route('/generate', methods=['POST'])
 def generate():
     # Parse the JSON request body and extract userID
     if not request.json or 'userID' not in request.json:
@@ -33,14 +39,16 @@ def generate():
 
     # Call functions in firebase.py and geminibridge.py with the extracted userID
     firebase.main_graph(user_id) # Replace some_function with the actual function name
-    geminibridge.main_query(user_id) # Replace some_function with the actual function name
+    gemini_bridge.main_query(user_id) # Replace some_function with the actual function name
 
     return jsonify({'message': 'Function calls were successful', 'firebaseResponse': 'None', 'geminibridgeResponse': 'None'}), 200
 
+@flask_app.route('/generate_content', methods=['POST'])
 def generate_content():
     try:
         # Read combined content
-        with open('txt_ref/combined_content.txt', 'r') as input_file:
+        file_path = os.path.join(os.path.dirname(__file__), 'txt_ref', 'combined_content.txt')
+        with open(file_path, 'r') as input_file:
             content = input_file.read()
 
         # Gemini Content Generation
@@ -58,4 +66,4 @@ def generate_content():
         return render_template('index.html', error_message=error_message)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    flask_app.run(debug=True)
