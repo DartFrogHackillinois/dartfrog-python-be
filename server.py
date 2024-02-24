@@ -36,7 +36,7 @@ def generate():
         return jsonify({'error': 'Request must be JSON and include a userID field'}), 400
 
     user_id = request.json['userID']
-
+    print(user_id)
     # Call functions in firebase.py and geminibridge.py with the extracted userID
     firebase.main_graph(user_id) # Replace some_function with the actual function name
     gemini_bridge.main_query(user_id) # Replace some_function with the actual function name
@@ -66,4 +66,8 @@ def generate_content():
         return render_template('index.html', error_message=error_message)
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     flask_app.run(debug=True)
+=======
+    flask_app.run(debug=True)
+>>>>>>> d7f24bfb5ae02abb804ffe8365ad14ad425cf772
