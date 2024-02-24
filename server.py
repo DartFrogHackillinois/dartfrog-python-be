@@ -21,6 +21,12 @@ def index():
     return render_template('index.html')
 
 @app.route('/generate', methods=['GET','POST'])
+
+
+
+
+
+
 def generate_content():
     try:
         # Read combined content
