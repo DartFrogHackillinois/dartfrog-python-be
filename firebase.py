@@ -19,20 +19,20 @@ def on_snapshot(col_snapshot, changes, read_time):
             latest_data = json.dumps(latest_document, indent=4, sort_keys=True, default=str)
 
             with open('txt_ref/dartfrog_query.txt', 'r') as file:
-                query_text = file.read()
+                query_text = file.read() # opens query prompt for reading
 
             with open('txt_ref/data.txt', 'w') as text_file:
-                text_file.write(latest_data)
+                text_file.write(latest_data) # opens and writes firebase provided data
 
             with open('txt_ref/data.txt', 'r') as data_file:
-                data = data_file.read()
+                data = data_file.read() # opens firebase provided data for reading by gemini in combined_content
 
             with open('txt_ref/combined_content.txt', 'w') as output_file:
-                output_file.write(query_text)
+                output_file.write(query_text) # connects both query and supplied data
                 output_file.write('\n')  # Add a newline between the files
                 output_file.write(data)
 
-            print("Success")
+            print("Success") # success lol
 
     callback_done.set()
 
