@@ -25,7 +25,7 @@ db = firestore.client()  # creates a client for the python program
 callback_done = threading.Event()
 
 
-def on_snapshot(col_snapshot, changes, read_time):
+def on_snapshot(col_snapshot, changes, read_time, user_id):
     for change in changes:
         if change.type.name == 'ADDED':
             latest_document = change.document.to_dict()
@@ -68,13 +68,10 @@ def on_snapshot(col_snapshot, changes, read_time):
 
     callback_done.set()
 
-
-# Assuming 'timestamp' field for ordering
-doc_ref = db.collection("csvUploads").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
-query_watch = doc_ref.on_snapshot(on_snapshot)
-
-# Wait for the callback to complete
-callback_done.wait()
+def main_graph(user_id):
+    doc_ref = db.collection("csvUploads").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
+    query_watch = doc_ref.on_snapshot(on_snapshot, user_id)
+    callback_done.wait()
 
 
 
