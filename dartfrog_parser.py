@@ -1,7 +1,7 @@
 import csv
 
 csv_file_path = 'annual-enterprise-survey-2021-financial-year-provisional.csv'
-text_file_path = 'output_text.txt'
+text_file_path = 'txt_ref/output_text.txt'
 
 with open(csv_file_path, 'r') as csv_file:
     csv_reader = csv.reader(csv_file)
