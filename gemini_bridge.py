@@ -1,63 +1,48 @@
-# FIREBASE.PY RUNS FIRST
-# GEMINI_BRIDGE RUNS SECOND
-
-import pathlib
-import textwrap
-import google.generativeai as genai
-
 import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
-from IPython.display import display
+from firebase_admin import credentials, firestore
+import google.generativeai as genai
+import textwrap
 from IPython.display import Markdown
-import csv
 
-def main_query(userId):
-    '''def to_markdown(text):
+def to_markdown(text):
     text = text.replace('•', '  *')
-    return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))'''
+    return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))
 
-# Check if the app is already initialized
-if not firebase_admin._apps:
-    # App not yet initialized, proceed with initialization
-    cred = credentials.Certificate('json_creds/dartfrog-ecb02-firebase-adminsdk-tt4ph-fe4cf40a97.json')
-    app = firebase_admin.initialize_app(cred)
-    db = firestore.client()
-else:
-    # App already initialized, retrieve the existing app
-    app = firebase_admin.get_app()
-    db = firestore.client()
+def main_query(user_id):
+    # Check if the app is already initialized
+    if not firebase_admin._apps:
+        # App not yet initialized, proceed with initialization
+        cred = credentials.Certificate('json_creds/dartfrog-ecb02-firebase-adminsdk-tt4ph-fe4cf40a97.json')
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+    else:
+        # App already initialized, retrieve the existing app
+        db = firestore.client()
 
-<<<<<<< HEAD
-=======
-    cred = credentials.Certificate('json_creds/dartfrog-ecb02-firebase-adminsdk-tt4ph-fe4cf40a97.json') # cert from firebase
-
-    app = firebase_admin.initialize_app(cred) # init for firebase client
-
-    db = firestore.client()
->>>>>>> d7f24bfb5ae02abb804ffe8365ad14ad425cf772
-
-    GOOGLE_API_KEY = ('AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY')
+    GOOGLE_API_KEY = 'AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY'
     genai.configure(api_key=GOOGLE_API_KEY)
     model = genai.GenerativeModel('gemini-pro')
 
-    with open('txt_ref/combined_content.txt', 'r') as input_file: # pulling user placed, firebase uploaded content
+    with open('txt_ref/combined_content.txt', 'r') as input_file:
         content = input_file.read()
 
     query = content
 
     try:
-        response = model.generate_content(query) # response from gemini
-        print(response.text)
-        #print(type(response.text)) # prints type string
-        updateData = { # working with python dictionary to post to Firestore
-            "generated_response": response.text,  # Use a field name to store the response
-            "user_id": userId
-        } # dictionary and json data were mismatched
+        response = model.generate_content(query)
+        generated_response = response.text
 
-        responseDart = db.collection("responseMessages").document("7H5hzZUGr7jRMV69yjyp").update(updateData)
-
-
+        # Update Firestore with the generated response
+        update_data = {
+            "generated_response": generated_response,
+            "user_id": user_id
+        }
+        db.collection("responseMessages").add(update_data)
 
     except Exception as e:
-        print(f"An error occurred: {e}")  # error 500 is due to limit
+        print(f"An error occurred: {e}")
+
+# Example usage
+if __name__ == '__main__':
+    # Replace 'example_user_id' with the actual user ID you want to use
+    main_query('example_user_id')
