@@ -1,50 +1,48 @@
+# FIREBASE.PY RUNS FIRST
+# GEMINI_BRIDGE RUNS SECOND
+
 import pathlib
 import textwrap
-
 import google.generativeai as genai
+
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 from IPython.display import display
 from IPython.display import Markdown
 import csv
 
-with open('customers-1000.csv', 'r') as csv_file:
-    csv_reader = csv.reader(csv_file)
-    with open('txt_ref/output_text.txt', 'w') as text_file:
-        for row in csv_reader:
-            text_file.write(','.join(row) + '\n')
 
-
-def to_markdown(text):
+'''def to_markdown(text):
     text = text.replace('•', '  *')
-    return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))
+    return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))'''
 
+
+cred = credentials.Certificate('json_creds/dartfrog-ecb02-firebase-adminsdk-tt4ph-fe4cf40a97.json')
+
+app = firebase_admin.initialize_app(cred)
+
+db = firestore.client()
 
 GOOGLE_API_KEY = ('AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY')
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-pro')
-
-with open('txt_ref/dartfrog_query.txt', 'r') as file:
-    query_text = file.read()
-
-with open('txt_ref/data.txt', 'r') as text_file:
-    additional_data = text_file.read()
-
-with open('txt_ref/combined_content.txt', 'w') as output_file:
-    output_file.write(query_text)
-    output_file.write('\n')  # Add a newline between the files
-    output_file.write(additional_data)
-
 
 with open('txt_ref/combined_content.txt', 'r') as input_file:
     content = input_file.read()
 
 query = content
 
-
 try:
     response = model.generate_content(query)
     print(response.text)
+    #print(type(response.text))
+    updateData = {
+        "generated_response": response.text  # Use a field name to store the response
+    }
+
+    responseDart = db.collection("responseMessages").document("7H5hzZUGr7jRMV69yjyp").update(updateData)
+
+
 except Exception as e:
     print(f"An error occurred: {e}")  # error 500 is due to limit
-
-
-
