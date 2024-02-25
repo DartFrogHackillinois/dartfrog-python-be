@@ -17,8 +17,8 @@ from IPython.display import Markdown
 import csv
 # import gemini_bridge
 def found_type(content):
-
-
+    if len(content)>5000:
+        content = content[:5000]+"..."
     context_str = """
     Given a CSV dataset, your task is to recommend the best Chart.js chart type to visually represent the data. The available Chart.js chart types are Line, Bar, Radar, Doughnut, Pie, Polar Area, Bubble, and Scatter. Consider the dataset's structure, the relationships it may contain, and how effectively each chart type could convey those relationships or data patterns. Your recommendation should be based on the following dataset characteristics:
     Column Count: The total number of columns in the dataset, which includes one column for labels or categories and others for data values.
@@ -60,52 +60,42 @@ userID = ''
 fileID = ''
 
 
+def safe_float(value):
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
 def infer_data_structure(rows, chart_type):
-    """
-    Infer the data structure required for the chart type from the CSV rows.
-    This function aims to be adaptable to different CSV formats and chart requirements,
-    specifically avoiding treating strings as data points unless they are labels.
-    """
-    # Initialize containers for inferred data
     structured_data = defaultdict(list)
     labels = []
 
-    # Define a helper function to safely convert values
-    def safe_float(value):
-        try:
-            return float(value)
-        except ValueError:
-            return None
+    for row in rows:
+        # Check if row has at least 2 elements for pie, doughnut, polar area, bubble, scatter.
+        # For line, bar, radar, it assumes first column as labels, remaining as datasets.
+        if len(row) < 2:
+            continue  # Skip this row if it doesn't have enough elements
 
-    # Infer structure based on chart type
-    if chart_type in ['line', 'bar', 'radar']:
-        # Assume first column as labels, remaining as datasets
-        labels = [row[0] for row in rows]
-        for row in rows:
-            # Convert values to floats, skipping non-numeric data
+        if chart_type in ['line', 'bar', 'radar']:
+            labels.append(row[0])
             for i, value in enumerate(row[1:], start=1):
                 numeric_value = safe_float(value)
                 if numeric_value is not None:  # Only append if the value could be converted
                     structured_data[i].append(numeric_value)
-    elif chart_type in ['bubble', 'scatter']:
-        # Process each row, ensuring all required values are numeric
-        for row in rows:
-            # Try converting all values, skip rows with non-numeric data
-            try:
+        elif chart_type in ['bubble', 'scatter']:
+            # Check if row has enough elements for bubble (3) or scatter (at least 2)
+            if (chart_type == 'bubble' and len(row) >= 3) or (chart_type == 'scatter' and len(row) >= 2):
                 point = [safe_float(value) for value in row]
-                if all(v is not None for v in point):  # Check all values were successfully converted
-                    if chart_type == 'bubble' and len(point) == 3:
+                if all(v is not None for v in point):  # Ensure all values are successfully converted
+                    if chart_type == 'bubble':
                         structured_data[1].append({'x': point[0], 'y': point[1], 'r': point[2]})
-                    elif chart_type == 'scatter' and len(point) >= 2:
+                    elif chart_type == 'scatter':
                         structured_data[1].append({'x': point[0], 'y': point[1]})
-            except ValueError:
-                continue  # Skip rows with invalid data
-    else:
-        # For pie, doughnut, and polar area charts, assume single dataset with labels and values
-        for row in rows:
+        else:
+            # Handle pie, doughnut, polar area with single dataset with labels and values
             label = row[0]
-            value = safe_float(row[1])
-            if value is not None:  # Only use rows where the value is numeric
+            value = safe_float(row[1]) if len(row) > 1 else None
+            if value is not None:
                 labels.append(label)
                 structured_data[1].append(value)
 
