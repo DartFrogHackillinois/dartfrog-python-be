@@ -7,6 +7,7 @@ import csv
 import pathlib
 import textwrap
 import google.generativeai as genai
+from collections import defaultdict
 
 import firebase_admin
 from firebase_admin import credentials
@@ -14,6 +15,36 @@ from firebase_admin import firestore
 from IPython.display import display
 from IPython.display import Markdown
 import csv
+# import gemini_bridge
+def found_type(content):
+    context_str = """
+    Given a CSV dataset, your task is to recommend the best Chart.js chart type to visually represent the data. The available Chart.js chart types are Line, Bar, Radar, Doughnut, Pie, Polar Area, Bubble, and Scatter. Consider the dataset's structure, the relationships it may contain, and how effectively each chart type could convey those relationships or data patterns. Your recommendation should be based on the following dataset characteristics:
+    Column Count: The total number of columns in the dataset, which includes one column for labels or categories and others for data values.
+    Data Nature: Whether the data values represent categories, sequential time points, or relationships between numerical variables.
+    Data Homogeneity: If the dataset contains uniformly distributed data across all columns or if there are significant variances.
+    Potential for Aggregation: Whether the dataset's data points could be aggregated into meaningful groups or summaries.
+    Based on these considerations, provide your recommendation for the most suitable Chart.js chart type as a single word answer from the list provided. This will ensure clarity and precision in communication. Your analysis and decision-making process should prioritize how well the data's story can be told visually through the selected chart type.
+    
+    Here is the content: {
+    """
+    context_str += content
+    context_str += """
+        } That was the end of the content.
+        
+        Remember, your task is that given a CSV dataset, your task is to recommend the best Chart.js chart type to visually represent the data. The available Chart.js chart types are Line, Bar, Radar, Doughnut, Pie, Polar Area, Bubble, and Scatter. Consider the dataset's structure, the relationships it may contain, and how effectively each chart type could convey those relationships or data patterns. Your recommendation should be based on the following dataset characteristics:
+        Column Count: The total number of columns in the dataset, which includes one column for labels or categories and others for data values.
+        Data Nature: Whether the data values represent categories, sequential time points, or relationships between numerical variables.
+        Data Homogeneity: If the dataset contains uniformly distributed data across all columns or if there are significant variances.
+        Potential for Aggregation: Whether the dataset's data points could be aggregated into meaningful groups or summaries.
+        Based on these considerations, provide your recommendation for the most suitable Chart.js chart type as a single word answer from the list provided. This will ensure clarity and precision in communication. Your analysis and decision-making process should prioritize how well the data's story can be told visually through the selected chart type.
+        
+        ONE WORD ANSWER REQUIRED!!!!!!!
+        """
+    GOOGLE_API_KEY = 'AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY'
+    genai.configure(api_key=GOOGLE_API_KEY)
+    model = genai.GenerativeModel('gemini-pro')
+    return model.generate_content(context_str).text
+
 
 cred = credentials.Certificate(
     "json_creds/dartfrog-ecb02-firebase-adminsdk-tt4ph-fe4cf40a97.json")  # local creds in project directory
@@ -35,15 +66,15 @@ def infer_data_structure(rows, chart_type):
     # Initialize containers for inferred data
     structured_data = defaultdict(list)
     labels = []
-
+    print("Chart type: " + chart_type)
     # Infer structure based on chart type
-    if chart_type in ['line', 'bar', 'radar']:
+    if chart_type in ['Line', 'Bar', 'Radar']:
         # Assume first column as labels, remaining as datasets
         labels = [row[0] for row in rows]
         for row in rows:
             for i, value in enumerate(row[1:], start=1):
                 structured_data[i].append(float(value) if value else None)
-    elif chart_type in ['bubble', 'scatter']:
+    elif chart_type in ['Bubble', 'Scatter']:
         # Assume columns represent x, y, (and r for bubble), each row is a point
         for row in rows:
             point = [float(value) for value in row]
@@ -85,6 +116,7 @@ def chartParser(csv_content, chart_type):
         }
         chart_data['data']['datasets'].append(dataset)
 
+    print(chart_data)
     return chart_data
 
 def on_snapshot(col_snapshot, changes, read_time):
@@ -100,7 +132,9 @@ def on_snapshot(col_snapshot, changes, read_time):
             fileID = processed_data['fileID']
 
             print(content)
-            gemini_bridge.found_type(content)
+            # found_type(content)
+
+            graph_r = chartParser(content, found_type(content))
             try:
                 graphData = {  # working with python dictionary to post to Firestore
                     "graph_response": chartParser(content, found_type),  # Use a field name to store the response
