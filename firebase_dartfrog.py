@@ -25,7 +25,8 @@ callback_done = threading.Event()
 
 userID = ''
 fileID = ''
-
+def chartParser(raw_data):
+    return raw_data
 
 def on_snapshot(col_snapshot, changes, read_time):
     global userID
@@ -42,7 +43,7 @@ def on_snapshot(col_snapshot, changes, read_time):
             print(content)
             try:
                 graphData = {  # working with python dictionary to post to Firestore
-                    "graph_response": content,  # Use a field name to store the response
+                    "graph_response": chartParser(content),  # Use a field name to store the response
                     "user_id": userID,
                     "file_id": fileID
                 }  # dictionary and json data were mismatched
