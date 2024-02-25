@@ -19,8 +19,8 @@ import csv
 
 
 def found_type(content, model):
-    if len(content)>5000:
-        content = content[:5000]+"..."
+    if len(content)>10000:
+        content = content[:10000]+"..."
     context_str = """
     Given a CSV dataset, your task is to recommend the best Chart.js chart type to visually represent the data. The available Chart.js chart types are Line, Bar, Radar, Doughnut, Pie, Polar Area, Bubble, and Scatter. Consider the dataset's structure, the relationships it may contain, and how effectively each chart type could convey those relationships or data patterns. Your recommendation should be based on the following dataset characteristics:
     Column Count: The total number of columns in the dataset, which includes one column for labels or categories and others for data values.
@@ -183,6 +183,8 @@ def on_snapshot(col_snapshot, changes, read_time):
                     user_content = input_file.read()
 
                 # Gemini Content Generation
+                if len(user_content) > 50000:
+                    user_content = user_content[:50000] + "..."
                 response = model.generate_content(user_content)
                 generated_content = response.text
                 analysis = {  # working with python dictionary to post to Firestore
