@@ -189,8 +189,8 @@ def on_snapshot(col_snapshot, changes, read_time):
                     user_content = input_file.read()
 
                 # Gemini Content Generation
-                if len(user_content) > 50000:
-                    user_content = user_content[:50000] + "..."
+                if len(user_content) > 20000:
+                    user_content = user_content[:20000] + "..."
                 response = model.generate_content(user_content)
                 generated_content = response.text
                 analysis = {  # working with python dictionary to post to Firestore
@@ -208,8 +208,7 @@ def on_snapshot(col_snapshot, changes, read_time):
 
             graph_type = found_type(content, model)
             new_data = find_best_chart_type(content,graph_type)
-            graph_type = new_data.chart_type
-            graph_r = new_data.chart_data
+            (graph_type, graph_r) = new_data
 
             try:
                 graphData = {  # working with python dictionary to post to Firestore
