@@ -111,33 +111,39 @@ def chartParser(csv_content, chart_type):
     Parses any given CSV to a JSON structure suitable for Chart.js, considering the chart type.
     This function is designed to adapt to various CSV structures.
     """
-    # Split the CSV content into lines and parse
     lines = csv_content.splitlines()
     reader = csv.reader(lines)
     next(reader)  # Skip headers
 
-    # Infer the data structure from rows
     rows = list(reader)
     labels, datasets = infer_data_structure(rows, chart_type)
 
-    # Prepare the Chart.js data structure
     chart_data = {
         'type': chart_type,
         'data': {
             'labels': labels,
-            'datasets': []
+            'datasets': [{
+                'label': f'Dataset {i}',
+                'data': data,
+            } for i, (dataset_label, data) in enumerate(datasets.items())],
         }
     }
 
-    for i, (dataset_label, data) in enumerate(datasets.items(), start=1):
-        dataset = {
-            'label': f'Dataset {i}',
-            'data': data
-        }
-        chart_data['data']['datasets'].append(dataset)
+    return chart_data if datasets else None  # Only return if datasets are not empty
 
-    print(chart_data)
-    return chart_data
+# Modified infer_data_structure function as provided remains unchanged
+
+def find_best_chart_type(csv_content, ideal_chart_type):
+    # List of chart types to iterate over
+    chart_types = [ideal_chart_type,'line', 'bar', 'radar', 'doughnut', 'pie', 'polarArea', 'bubble', 'scatter']
+
+    for chart_type in chart_types:
+        chart_data = chartParser(csv_content, chart_type)
+        if chart_data:  # Check if chart_data is not None (i.e., datasets are not empty)
+            print(f"Found suitable chart type: {chart_type}")
+            return chart_type, chart_data  # Return the type and data of the first suitable chart
+
+    return None, None  # Return None if no suitable chart type is found
 
 def on_snapshot(col_snapshot, changes, read_time):
     GOOGLE_API_KEY = 'AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY'
@@ -183,8 +189,8 @@ def on_snapshot(col_snapshot, changes, read_time):
                     user_content = input_file.read()
 
                 # Gemini Content Generation
-                if len(user_content) > 50000:
-                    user_content = user_content[:50000] + "..."
+                if len(user_content) > 20000:
+                    user_content = user_content[:20000] + "..."
                 response = model.generate_content(user_content)
                 generated_content = response.text
                 analysis = {  # working with python dictionary to post to Firestore
@@ -201,7 +207,9 @@ def on_snapshot(col_snapshot, changes, read_time):
 
 
             graph_type = found_type(content, model)
-            graph_r = chartParser(content, graph_type)
+            new_data = find_best_chart_type(content,graph_type)
+            (graph_type, graph_r) = new_data
+
             try:
                 graphData = {  # working with python dictionary to post to Firestore
                     "graph_response": graph_r,  # Use a field name to store the response
