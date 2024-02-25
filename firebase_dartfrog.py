@@ -17,6 +17,8 @@ from IPython.display import Markdown
 import csv
 # import gemini_bridge
 def found_type(content):
+
+
     context_str = """
     Given a CSV dataset, your task is to recommend the best Chart.js chart type to visually represent the data. The available Chart.js chart types are Line, Bar, Radar, Doughnut, Pie, Polar Area, Bubble, and Scatter. Consider the dataset's structure, the relationships it may contain, and how effectively each chart type could convey those relationships or data patterns. Your recommendation should be based on the following dataset characteristics:
     Column Count: The total number of columns in the dataset, which includes one column for labels or categories and others for data values.
