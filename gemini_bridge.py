@@ -5,6 +5,35 @@ import textwrap
 from IPython.display import Markdown
 import firebase_dartfrog
 
+def found_type(content):
+    context_str = """
+    Given a CSV dataset, your task is to recommend the best Chart.js chart type to visually represent the data. The available Chart.js chart types are Line, Bar, Radar, Doughnut, Pie, Polar Area, Bubble, and Scatter. Consider the dataset's structure, the relationships it may contain, and how effectively each chart type could convey those relationships or data patterns. Your recommendation should be based on the following dataset characteristics:
+    Column Count: The total number of columns in the dataset, which includes one column for labels or categories and others for data values.
+    Data Nature: Whether the data values represent categories, sequential time points, or relationships between numerical variables.
+    Data Homogeneity: If the dataset contains uniformly distributed data across all columns or if there are significant variances.
+    Potential for Aggregation: Whether the dataset's data points could be aggregated into meaningful groups or summaries.
+    Based on these considerations, provide your recommendation for the most suitable Chart.js chart type as a single word answer from the list provided. This will ensure clarity and precision in communication. Your analysis and decision-making process should prioritize how well the data's story can be told visually through the selected chart type.
+    
+    Here is the content: {
+    """
+    context_str += content
+    context_str += """
+        } That was the end of the content.
+        
+        Remember, your task is that given a CSV dataset, your task is to recommend the best Chart.js chart type to visually represent the data. The available Chart.js chart types are Line, Bar, Radar, Doughnut, Pie, Polar Area, Bubble, and Scatter. Consider the dataset's structure, the relationships it may contain, and how effectively each chart type could convey those relationships or data patterns. Your recommendation should be based on the following dataset characteristics:
+        Column Count: The total number of columns in the dataset, which includes one column for labels or categories and others for data values.
+        Data Nature: Whether the data values represent categories, sequential time points, or relationships between numerical variables.
+        Data Homogeneity: If the dataset contains uniformly distributed data across all columns or if there are significant variances.
+        Potential for Aggregation: Whether the dataset's data points could be aggregated into meaningful groups or summaries.
+        Based on these considerations, provide your recommendation for the most suitable Chart.js chart type as a single word answer from the list provided. This will ensure clarity and precision in communication. Your analysis and decision-making process should prioritize how well the data's story can be told visually through the selected chart type.
+        
+        ONE WORD ANSWER REQUIRED!!!!!!!
+        """
+    GOOGLE_API_KEY = 'AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY'
+    genai.configure(api_key=GOOGLE_API_KEY)
+    model = genai.GenerativeModel('gemini-pro')
+    return model.generate_content(context_str).text
+
 def to_markdown(text):
     text = text.replace('•', '  *')
     return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))

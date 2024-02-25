@@ -25,8 +25,67 @@ callback_done = threading.Event()
 
 userID = ''
 fileID = ''
-def chartParser(raw_data):
-    return raw_data
+
+
+def infer_data_structure(rows, chart_type):
+    """
+    Infer the data structure required for the chart type from the CSV rows.
+    This function aims to be adaptable to different CSV formats and chart requirements.
+    """
+    # Initialize containers for inferred data
+    structured_data = defaultdict(list)
+    labels = []
+
+    # Infer structure based on chart type
+    if chart_type in ['line', 'bar', 'radar']:
+        # Assume first column as labels, remaining as datasets
+        labels = [row[0] for row in rows]
+        for row in rows:
+            for i, value in enumerate(row[1:], start=1):
+                structured_data[i].append(float(value) if value else None)
+    elif chart_type in ['bubble', 'scatter']:
+        # Assume columns represent x, y, (and r for bubble), each row is a point
+        for row in rows:
+            point = [float(value) for value in row]
+            structured_data[1].append({'x': point[0], 'y': point[1], 'r': point[2]} if chart_type == 'bubble' else {'x': point[0], 'y': point[1]})
+    else:
+        # For pie, doughnut, and polarArea, assume single dataset with multiple segments
+        labels = [row[0] for row in rows]
+        structured_data[1] = [float(row[1]) for row in rows]
+
+    return labels, dict(structured_data)
+
+def chartParser(csv_content, chart_type):
+    """
+    Parses any given CSV to a JSON structure suitable for Chart.js, considering the chart type.
+    This function is designed to adapt to various CSV structures.
+    """
+    # Split the CSV content into lines and parse
+    lines = csv_content.splitlines()
+    reader = csv.reader(lines)
+    next(reader)  # Skip headers
+
+    # Infer the data structure from rows
+    rows = list(reader)
+    labels, datasets = infer_data_structure(rows, chart_type)
+
+    # Prepare the Chart.js data structure
+    chart_data = {
+        'type': chart_type,
+        'data': {
+            'labels': labels,
+            'datasets': []
+        }
+    }
+
+    for i, (dataset_label, data) in enumerate(datasets.items(), start=1):
+        dataset = {
+            'label': f'Dataset {i}',
+            'data': data
+        }
+        chart_data['data']['datasets'].append(dataset)
+
+    return chart_data
 
 def on_snapshot(col_snapshot, changes, read_time):
     global userID
@@ -41,9 +100,10 @@ def on_snapshot(col_snapshot, changes, read_time):
             fileID = processed_data['fileID']
 
             print(content)
+            gemini_bridge.found_type(content)
             try:
                 graphData = {  # working with python dictionary to post to Firestore
-                    "graph_response": chartParser(content),  # Use a field name to store the response
+                    "graph_response": chartParser(content, found_type),  # Use a field name to store the response
                     "user_id": userID,
                     "file_id": fileID
                 }  # dictionary and json data were mismatched
