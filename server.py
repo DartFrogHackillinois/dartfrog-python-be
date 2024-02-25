@@ -21,7 +21,7 @@ else:
     db = firestore.client()
 
 # Gemini Bridge Initialization
-GOOGLE_API_KEY = 'AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY'
+GOOGLE_API_KEY = 'AIzaSyCkeOEVVxoXFINgE7kAh5PxBJfVgcmVswk'
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-pro')
 

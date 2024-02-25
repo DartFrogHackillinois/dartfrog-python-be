@@ -22,7 +22,7 @@ def found_type(content, model):
     if len(content)>10000:
         content = content[:10000]+"..."
     context_str = """
-    Given a CSV dataset, your task is to recommend the best Chart.js chart type to visually represent the data. The available Chart.js chart types are Line, Bar, Radar, Doughnut, Pie, Polar Area, Bubble, and Scatter. Consider the dataset's structure, the relationships it may contain, and how effectively each chart type could convey those relationships or data patterns. Your recommendation should be based on the following dataset characteristics:
+    Given a CSV dataset, your task is to recommend the best Chart.js chart type to visually represent the data. The available Chart.js chart types are Bar, Radar, Doughnut, Pie, Polar Area, Bubble, and Scatter. Consider the dataset's structure, the relationships it may contain, and how effectively each chart type could convey those relationships or data patterns. Your recommendation should be based on the following dataset characteristics:
     Column Count: The total number of columns in the dataset, which includes one column for labels or categories and others for data values.
     Data Nature: Whether the data values represent categories, sequential time points, or relationships between numerical variables.
     Data Homogeneity: If the dataset contains uniformly distributed data across all columns or if there are significant variances.
@@ -35,13 +35,13 @@ def found_type(content, model):
     context_str += """
         } That was the end of the content.
         
-        Remember, your task is that given a CSV dataset, your task is to recommend the best Chart.js chart type to visually represent the data. The available Chart.js chart types are Line, Bar, Radar, Doughnut, Pie, Polar Area, Bubble, and Scatter. Consider the dataset's structure, the relationships it may contain, and how effectively each chart type could convey those relationships or data patterns. Your recommendation should be based on the following dataset characteristics:
+        Remember, your task is that given a CSV dataset, your task is to recommend the best Chart.js chart type to visually represent the data. The available Chart.js chart types are Bar, Radar, Doughnut, Pie, Polar Area, Bubble, and Scatter. Consider the dataset's structure, the relationships it may contain, and how effectively each chart type could convey those relationships or data patterns. Your recommendation should be based on the following dataset characteristics:
         Column Count: The total number of columns in the dataset, which includes one column for labels or categories and others for data values.
         Data Nature: Whether the data values represent categories, sequential time points, or relationships between numerical variables.
         Data Homogeneity: If the dataset contains uniformly distributed data across all columns or if there are significant variances.
         Potential for Aggregation: Whether the dataset's data points could be aggregated into meaningful groups or summaries.
         Based on these considerations, provide your recommendation for the most suitable Chart.js chart type as a single word answer from the list provided. This will ensure clarity and precision in communication. Your analysis and decision-making process should prioritize how well the data's story can be told visually through the selected chart type.
-        
+        PREFER PIE CHART IF REPEATING NUMBERS ARE PRESENT IN THE DATA!!!!
         ONE WORD ANSWER REQUIRED ALL LOWERCASE!!!!!!!
         """
     return model.generate_content(context_str).text
@@ -135,9 +135,10 @@ def chartParser(csv_content, chart_type):
 
 def find_best_chart_type(csv_content, ideal_chart_type):
     # List of chart types to iterate over
-    chart_types = [ideal_chart_type,'line', 'bar', 'radar', 'doughnut', 'pie', 'polarArea', 'bubble', 'scatter']
+    chart_types = [ideal_chart_type, 'line','radar', 'doughnut', 'pie', 'polarArea', 'bubble', 'bar', 'scatter']
 
     for chart_type in chart_types:
+        print(chart_type)
         chart_data = chartParser(csv_content, chart_type)
         if chart_data:  # Check if chart_data is not None (i.e., datasets are not empty)
             print(f"Found suitable chart type: {chart_type}")
@@ -146,7 +147,7 @@ def find_best_chart_type(csv_content, ideal_chart_type):
     return None, None  # Return None if no suitable chart type is found
 
 def on_snapshot(col_snapshot, changes, read_time):
-    GOOGLE_API_KEY = 'AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY'
+    GOOGLE_API_KEY = 'AIzaSyCkeOEVVxoXFINgE7kAh5PxBJfVgcmVswk'
     genai.configure(api_key=GOOGLE_API_KEY)
     model = genai.GenerativeModel('gemini-pro')
     global userID
@@ -217,8 +218,8 @@ def on_snapshot(col_snapshot, changes, read_time):
                     "user_id": userID,
                     "file_id": fileID
                 }  # dictionary and json data were mismatched
-
-                dartfrog_data = db.collection("graphData").add(graphData)
+                if graph_type is not None:
+                    dartfrog_data = db.collection("graphData").add(graphData)
                 print(userID)
 
 
