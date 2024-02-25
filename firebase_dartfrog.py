@@ -66,38 +66,45 @@ def safe_float(value):
     except ValueError:
         return None
 
+
 def infer_data_structure(rows, chart_type):
     structured_data = defaultdict(list)
     labels = []
 
     for row in rows:
-        # Check if row has at least 2 elements for pie, doughnut, polar area, bubble, scatter.
-        # For line, bar, radar, it assumes first column as labels, remaining as datasets.
-        if len(row) < 2:
-            continue  # Skip this row if it doesn't have enough elements
+        # For line, bar, radar: assume first column as labels, remaining as datasets.
+        # For bubble, scatter: need at least 2 elements (x and y; r is optional for scatter).
+        # For pie, doughnut, polar area: need at least 2 elements (label and value).
 
         if chart_type in ['line', 'bar', 'radar']:
-            labels.append(row[0])
-            for i, value in enumerate(row[1:], start=1):
-                numeric_value = safe_float(value)
-                if numeric_value is not None:  # Only append if the value could be converted
-                    structured_data[i].append(numeric_value)
+            if len(row) > 1:  # Ensure there's at least one data point beyond the label
+                labels.append(row[0])
+                for i, value in enumerate(row[1:], start=1):
+                    numeric_value = safe_float(value)
+                    if numeric_value is not None:  # Only append if the value could be converted
+                        structured_data[i].append(numeric_value)
+            # Else: Consider logging this case as a data row without enough columns for these chart types
+
         elif chart_type in ['bubble', 'scatter']:
-            # Check if row has enough elements for bubble (3) or scatter (at least 2)
-            if (chart_type == 'bubble' and len(row) >= 3) or (chart_type == 'scatter' and len(row) >= 2):
-                point = [safe_float(value) for value in row]
-                if all(v is not None for v in point):  # Ensure all values are successfully converted
-                    if chart_type == 'bubble':
-                        structured_data[1].append({'x': point[0], 'y': point[1], 'r': point[2]})
-                    elif chart_type == 'scatter':
-                        structured_data[1].append({'x': point[0], 'y': point[1]})
+            # Try to handle rows with missing values gracefully for scatter; bubble requires 3 values
+            point = [safe_float(value) for value in row]
+            if all(v is not None for v in point[:2]):  # Ensure at least x and y are valid
+                if chart_type == 'bubble' and len(point) >= 3:
+                    structured_data[1].append({'x': point[0], 'y': point[1], 'r': point[2]})
+                elif chart_type == 'scatter':
+                    # For scatter, r is not required
+                    structured_data[1].append({'x': point[0], 'y': point[1]})
+            # Else: Consider logging this case as a data row without enough valid columns/values
+
         else:
-            # Handle pie, doughnut, polar area with single dataset with labels and values
-            label = row[0]
-            value = safe_float(row[1]) if len(row) > 1 else None
-            if value is not None:
-                labels.append(label)
-                structured_data[1].append(value)
+            # Pie, doughnut, and polar area charts: handle with single dataset with labels and values
+            if len(row) > 1:
+                label = row[0]
+                value = safe_float(row[1])
+                if value is not None:
+                    labels.append(label)
+                    structured_data[1].append(value)
+            # Else: Consider logging this case as a data row without enough columns for these chart types
 
     return labels, dict(structured_data)
 def chartParser(csv_content, chart_type):
