@@ -2,10 +2,11 @@ from flask import Flask, render_template, request, jsonify
 import firebase_admin
 from firebase_admin import credentials, firestore
 import google.generativeai as genai
-import firebase
+import firebase_dartfrog
 import gemini_bridge
 import os
 
+print(firebase_dartfrog.userID)
 flask_app = Flask(__name__)
 
 # Check if the app is already initialized
@@ -36,8 +37,8 @@ def generate():
 
     user_id = request.json['userID']
     print(user_id)
-    # Call functions in firebase.py and geminibridge.py with the extracted userID
-    firebase.main_graph(user_id)  # Replace some_function with the actual function name
+    # Call functions in firebase_dartfrog.py and geminibridge.py with the extracted userID
+    firebase_dartfrog.main_graph(user_id)  # Replace some_function with the actual function name
     gemini_bridge.main_query(user_id)  # Replace some_function with the actual function name
 
     return jsonify({'message': 'Function calls were successful', 'firebaseResponse': 'None', 'geminibridgeResponse': 'None'}), 200

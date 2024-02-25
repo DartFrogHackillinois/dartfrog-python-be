@@ -15,7 +15,6 @@ from IPython.display import display
 from IPython.display import Markdown
 import csv
 
-
 cred = credentials.Certificate(
     "json_creds/dartfrog-ecb02-firebase-adminsdk-tt4ph-fe4cf40a97.json")  # local creds in project directory
 firebase_admin.initialize_app(cred)  # firebase_admin initializes creds
@@ -24,32 +23,33 @@ db = firestore.client()  # creates a client for the python program
 
 callback_done = threading.Event()
 
+userID = ''
 
-def on_snapshot(col_snapshot, changes, read_time, user_id):
+
+def on_snapshot(col_snapshot, changes, read_time):
+    global userID
     for change in changes:
         if change.type.name == 'ADDED':
             latest_document = change.document.to_dict()
             latest_data = json.dumps(latest_document, indent=4, sort_keys=True, default=str)
             processed_data = json.loads(latest_data)
             content = processed_data['content']
-            user_id = processed_data['userID']
+            userID = processed_data['userID']
 
             print(content)
             try:
                 graphData = {  # working with python dictionary to post to Firestore
-                    "graph_response": content, # Use a field name to store the response
-                    "user_id": user_id,
-                    "type": "line"
+                    "graph_response": content,  # Use a field name to store the response
+                    "user_id": userID
                 }  # dictionary and json data were mismatched
 
-                dartfrog_data = db.collection("graphData").document("iRoqnCqgAYzgOmbeGdG1").update(graphData)
+                dartfrog_data = db.collection("graphData").add(graphData)
+                print(userID)
 
 
 
             except Exception as e:
                 print("Failed to upload graph data")
-
-
 
             with open('txt_ref/dartfrog_query.txt', 'r') as file:
                 query_text = file.read()  # opens query prompt for reading
@@ -69,10 +69,11 @@ def on_snapshot(col_snapshot, changes, read_time, user_id):
 
     callback_done.set()
 
-def main_graph(user_id):
-    doc_ref = db.collection("csvUploads").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
-    query_watch = doc_ref.on_snapshot(on_snapshot, user_id)
-    callback_done.wait()
 
+print(userID)
+# Assuming 'timestamp' field for ordering
+doc_ref = db.collection("csvUploads").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
+query_watch = doc_ref.on_snapshot(on_snapshot)
 
-
+# Wait for the callback to complete
+callback_done.wait()

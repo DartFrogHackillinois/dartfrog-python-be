@@ -3,10 +3,13 @@ from firebase_admin import credentials, firestore
 import google.generativeai as genai
 import textwrap
 from IPython.display import Markdown
+import firebase_dartfrog
 
 def to_markdown(text):
     text = text.replace('•', '  *')
     return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))
+
+user_id = firebase_dartfrog.userID
 
 def main_query(user_id):
     # Check if the app is already initialized
@@ -45,4 +48,4 @@ def main_query(user_id):
 # Example usage
 if __name__ == '__main__':
     # Replace 'example_user_id' with the actual user ID you want to use
-    main_query('example_user_id')
+    main_query(f'{firebase_dartfrog.userID}')
