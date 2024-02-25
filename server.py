@@ -66,4 +66,4 @@ def generate_content():
         return render_template('index.html', error_message=error_message)
 
 if __name__ == '__main__':
-    flask_app.run(debug=True)
+    flask_app.run(debug=False)

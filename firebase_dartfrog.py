@@ -152,7 +152,7 @@ def on_snapshot(col_snapshot, changes, read_time):
             processed_data = json.loads(latest_data)
             content = processed_data['content']
             userID = processed_data['userID']
-            fileID = processed_data['fileID']
+            fileID = processed_data['file_id']
 
             print(content)
             # found_type(content)
@@ -236,7 +236,8 @@ def on_snapshot(col_snapshot, changes, read_time):
 
 print(userID)
 # Assuming 'timestamp' field for ordering
-doc_ref = db.collection("csvUploads").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
+doc_ref = db.collection("csvUploads")
+
 query_watch = doc_ref.on_snapshot(on_snapshot)
 
 # Wait for the callback to complete
