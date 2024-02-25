@@ -38,7 +38,7 @@ def found_type(content):
         Potential for Aggregation: Whether the dataset's data points could be aggregated into meaningful groups or summaries.
         Based on these considerations, provide your recommendation for the most suitable Chart.js chart type as a single word answer from the list provided. This will ensure clarity and precision in communication. Your analysis and decision-making process should prioritize how well the data's story can be told visually through the selected chart type.
         
-        ONE WORD ANSWER REQUIRED!!!!!!!
+        ONE WORD ANSWER REQUIRED ALL LOWERCASE!!!!!!!
         """
     GOOGLE_API_KEY = 'AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY'
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -61,31 +61,53 @@ fileID = ''
 def infer_data_structure(rows, chart_type):
     """
     Infer the data structure required for the chart type from the CSV rows.
-    This function aims to be adaptable to different CSV formats and chart requirements.
+    This function aims to be adaptable to different CSV formats and chart requirements,
+    specifically avoiding treating strings as data points unless they are labels.
     """
     # Initialize containers for inferred data
     structured_data = defaultdict(list)
     labels = []
-    print("Chart type: " + chart_type)
+
+    # Define a helper function to safely convert values
+    def safe_float(value):
+        try:
+            return float(value)
+        except ValueError:
+            return None
+
     # Infer structure based on chart type
-    if chart_type in ['Line', 'Bar', 'Radar']:
+    if chart_type in ['line', 'bar', 'radar']:
         # Assume first column as labels, remaining as datasets
         labels = [row[0] for row in rows]
         for row in rows:
+            # Convert values to floats, skipping non-numeric data
             for i, value in enumerate(row[1:], start=1):
-                structured_data[i].append(float(value) if value else None)
-    elif chart_type in ['Bubble', 'Scatter']:
-        # Assume columns represent x, y, (and r for bubble), each row is a point
+                numeric_value = safe_float(value)
+                if numeric_value is not None:  # Only append if the value could be converted
+                    structured_data[i].append(numeric_value)
+    elif chart_type in ['bubble', 'scatter']:
+        # Process each row, ensuring all required values are numeric
         for row in rows:
-            point = [float(value) for value in row]
-            structured_data[1].append({'x': point[0], 'y': point[1], 'r': point[2]} if chart_type == 'bubble' else {'x': point[0], 'y': point[1]})
+            # Try converting all values, skip rows with non-numeric data
+            try:
+                point = [safe_float(value) for value in row]
+                if all(v is not None for v in point):  # Check all values were successfully converted
+                    if chart_type == 'bubble' and len(point) == 3:
+                        structured_data[1].append({'x': point[0], 'y': point[1], 'r': point[2]})
+                    elif chart_type == 'scatter' and len(point) >= 2:
+                        structured_data[1].append({'x': point[0], 'y': point[1]})
+            except ValueError:
+                continue  # Skip rows with invalid data
     else:
-        # For pie, doughnut, and polarArea, assume single dataset with multiple segments
-        labels = [row[0] for row in rows]
-        structured_data[1] = [float(row[1]) for row in rows]
+        # For pie, doughnut, and polar area charts, assume single dataset with labels and values
+        for row in rows:
+            label = row[0]
+            value = safe_float(row[1])
+            if value is not None:  # Only use rows where the value is numeric
+                labels.append(label)
+                structured_data[1].append(value)
 
     return labels, dict(structured_data)
-
 def chartParser(csv_content, chart_type):
     """
     Parses any given CSV to a JSON structure suitable for Chart.js, considering the chart type.
@@ -133,11 +155,12 @@ def on_snapshot(col_snapshot, changes, read_time):
 
             print(content)
             # found_type(content)
-
-            graph_r = chartParser(content, found_type(content))
+            graph_type = found_type(content)
+            graph_r = chartParser(content, graph_type)
             try:
                 graphData = {  # working with python dictionary to post to Firestore
-                    "graph_response": chartParser(content, found_type),  # Use a field name to store the response
+                    "graph_response": graph_r,  # Use a field name to store the response
+                    "graph_type": graph_type,
                     "user_id": userID,
                     "file_id": fileID
                 }  # dictionary and json data were mismatched
