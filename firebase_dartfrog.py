@@ -24,10 +24,12 @@ db = firestore.client()  # creates a client for the python program
 callback_done = threading.Event()
 
 userID = ''
+fileID = ''
 
 
 def on_snapshot(col_snapshot, changes, read_time):
     global userID
+    global fileID
     for change in changes:
         if change.type.name == 'ADDED':
             latest_document = change.document.to_dict()

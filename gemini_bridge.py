@@ -10,6 +10,7 @@ def to_markdown(text):
     return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))
 
 user_id = firebase_dartfrog.userID
+file_id = firebase_dartfrog.fileID
 
 def main_query(user_id):
     # Check if the app is already initialized
@@ -38,7 +39,8 @@ def main_query(user_id):
         # Update Firestore with the generated response
         update_data = {
             "generated_response": generated_response,
-            "user_id": user_id
+            "user_id": user_id,
+            "file_id": file_id
         }
         db.collection("responseMessages").add(update_data)
 
