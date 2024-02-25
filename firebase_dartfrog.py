@@ -35,12 +35,14 @@ def on_snapshot(col_snapshot, changes, read_time):
             processed_data = json.loads(latest_data)
             content = processed_data['content']
             userID = processed_data['userID']
+            fileID = processed_data['fileID']
 
             print(content)
             try:
                 graphData = {  # working with python dictionary to post to Firestore
                     "graph_response": content,  # Use a field name to store the response
-                    "user_id": userID
+                    "user_id": userID,
+                    "file_id": fileID
                 }  # dictionary and json data were mismatched
 
                 dartfrog_data = db.collection("graphData").add(graphData)
