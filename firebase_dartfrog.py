@@ -3,7 +3,7 @@ from firebase_admin import credentials
 from firebase_admin import firestore, threading
 import json
 import csv
-
+import os
 import pathlib
 import textwrap
 import google.generativeai as genai
@@ -16,7 +16,9 @@ from IPython.display import display
 from IPython.display import Markdown
 import csv
 # import gemini_bridge
-def found_type(content):
+
+
+def found_type(content, model):
     if len(content)>5000:
         content = content[:5000]+"..."
     context_str = """
@@ -42,9 +44,6 @@ def found_type(content):
         
         ONE WORD ANSWER REQUIRED ALL LOWERCASE!!!!!!!
         """
-    GOOGLE_API_KEY = 'AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY'
-    genai.configure(api_key=GOOGLE_API_KEY)
-    model = genai.GenerativeModel('gemini-pro')
     return model.generate_content(context_str).text
 
 
@@ -141,6 +140,9 @@ def chartParser(csv_content, chart_type):
     return chart_data
 
 def on_snapshot(col_snapshot, changes, read_time):
+    GOOGLE_API_KEY = 'AIzaSyBaoV9kl3p8wEo0yXB89AosAfdVynkzpDY'
+    genai.configure(api_key=GOOGLE_API_KEY)
+    model = genai.GenerativeModel('gemini-pro')
     global userID
     global fileID
     for change in changes:
@@ -154,7 +156,49 @@ def on_snapshot(col_snapshot, changes, read_time):
 
             print(content)
             # found_type(content)
-            graph_type = found_type(content)
+
+            print(content)
+            # found_type(content)
+
+            print(content)
+            # found_type(content)
+
+            with open('txt_analysis/dartfrog_query.txt', 'r') as file:
+                query_text = file.read()  # opens query prompt for reading
+
+            with open('txt_analysis/data.txt', 'w') as text_file:
+                text_file.write(content)  # opens and writes firebase provided data
+
+            with open('txt_analysis/data.txt', 'r') as data_file:
+                data = data_file.read()  # opens firebase provided data for reading by gemini in combined_content
+
+            with open('txt_analysis/combined_content.txt', 'w') as output_file:
+                output_file.write(query_text)  # connects both query and supplied data
+                output_file.write('\n')  # Add a newline between the files
+                output_file.write(data)
+
+                # Read combined content
+                file_path = os.path.join(os.path.dirname(__file__), 'txt_analysis', 'combined_content.txt')
+                with open(file_path, 'r') as input_file:
+                    user_content = input_file.read()
+
+                # Gemini Content Generation
+                response = model.generate_content(user_content)
+                generated_content = response.text
+                analysis = {  # working with python dictionary to post to Firestore
+                    "response": generated_content,
+                    "user_id": userID,
+                    "file_id": fileID
+                }  # dictionary and json data were mismatched
+
+                db.collection("responseMessages").add(analysis)
+
+            print("Success")
+
+            # gemini_analysis(userID, changes, content, fileID) # gemini analysis function
+
+
+            graph_type = found_type(content, model)
             graph_r = chartParser(content, graph_type)
             try:
                 graphData = {  # working with python dictionary to post to Firestore
@@ -187,8 +231,7 @@ def on_snapshot(col_snapshot, changes, read_time):
                 output_file.write(data)
 
             print("Success")  # success lol
-
-    callback_done.set()
+        callback_done.set()
 
 
 print(userID)
